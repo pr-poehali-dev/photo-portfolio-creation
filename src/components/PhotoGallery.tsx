@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Photo } from "./PhotoItem";
 import PhotoItem from "./PhotoItem";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon, SaveIcon, XIcon, CheckIcon } from "lucide-react";
+import { Trash2Icon, SaveIcon, XIcon, CheckIcon, GridIcon, Grid3X3Icon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 interface PhotoGalleryProps {
@@ -15,6 +15,7 @@ interface PhotoGalleryProps {
 const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [gridGap, setGridGap] = useState<string>("gap-1");
+  const [gridCols, setGridCols] = useState<string>("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const handleSelectPhoto = (id: string, isSelected: boolean) => {
@@ -57,6 +58,14 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
   const toggleGridGap = () => {
     setGridGap(gridGap === "gap-1" ? "gap-0.5" : "gap-1");
   };
+  
+  const toggleGridSize = () => {
+    if (gridCols.includes("grid-cols-5")) {
+      setGridCols("grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4"); // Уменьшаем
+    } else {
+      setGridCols("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"); // Увеличиваем
+    }
+  };
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -86,6 +95,15 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
                 onClick={toggleGridGap}
               >
                 {gridGap === "gap-1" ? "Меньше отступы" : "Больше отступы"}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={toggleGridSize}
+              >
+                <Grid3X3Icon className="h-4 w-4 mr-1" />
+                {gridCols.includes("grid-cols-5") ? "Крупнее" : "Мельче"}
               </Button>
               
               <Button
@@ -140,7 +158,7 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
           </div>
 
           {/* Галерея фотографий */}
-          <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${gridGap}`}>
+          <div className={`grid ${gridCols} ${gridGap}`}>
             {photos.map(photo => (
               <PhotoItem
                 key={photo.id}

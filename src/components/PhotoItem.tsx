@@ -1,8 +1,7 @@
 
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2Icon, Menu, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Trash2Icon } from "lucide-react";
 
 export interface Photo {
   id: string;
@@ -15,91 +14,113 @@ export interface Photo {
 
 interface PhotoItemProps {
   photo: Photo;
-  onSelect: (id: string, isSelected: boolean) => void;
   onDelete: (id: string) => void;
+  onSelect: (id: string, isSelected: boolean) => void;
   isSelected: boolean;
   selectionMode: boolean;
 }
 
-const PhotoItem = ({ photo, onSelect, onDelete, isSelected, selectionMode }: PhotoItemProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const isHorizontal = photo.width > photo.height;
-  
-  const handlePhotoClick = () => {
+const PhotoItem = ({ photo, onDelete, onSelect, isSelected, selectionMode }: PhotoItemProps) => {
+  const [showControls, setShowControls] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSelect(photo.id, e.target.checked);
+  };
+
+  const handleImageClick = () => {
     if (selectionMode) {
       onSelect(photo.id, !isSelected);
     } else {
-      setIsDialogOpen(true);
+      setShowFullImage(true);
     }
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete(photo.id);
-  };
-  
+  const formattedDate = new Date(photo.uploadDate).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+
   return (
     <>
       <div 
-        className="group relative"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="group relative aspect-square overflow-hidden bg-gray-100"
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
       >
+        {/* Содержимое фото */}
         <div 
-          className="relative overflow-hidden rounded-md bg-gray-100 cursor-pointer"
-          onClick={handlePhotoClick}
+          className="w-full h-full cursor-pointer relative"
+          onClick={handleImageClick}
         >
-          <div className="w-full pb-[100%] relative">
-            <img
-              src={photo.url}
-              alt={photo.name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+          <img 
+            src={photo.url} 
+            alt={photo.name}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          />
+          
+          {/* Overlay при наведении */}
+          <div className={`absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 
+            ${showControls ? 'opacity-100' : 'opacity-0'} 
+            ${selectionMode ? 'opacity-100 bg-black/10' : ''} 
+            ${isSelected ? 'opacity-100 bg-portfolio-primary/30' : ''} 
+            transition-opacity`}
+          >
+            {!selectionMode && (
+              <span className="text-white text-sm font-medium px-2 py-1 bg-black/50 rounded max-w-full truncate">
+                {photo.name}
+              </span>
+            )}
           </div>
-          <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity" />
+          
+          {/* Чекбокс для выбора в режиме выбора */}
+          {selectionMode && (
+            <div className="absolute top-2 right-2 z-10">
+              <input 
+                type="checkbox" 
+                checked={isSelected}
+                onChange={handleCheckboxChange}
+                className="h-5 w-5 rounded border-gray-300 text-portfolio-primary focus:ring-portfolio-primary"
+              />
+            </div>
+          )}
+          
+          {/* Название фото снизу */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+            <p className="text-white text-xs truncate">{photo.name}</p>
+          </div>
         </div>
         
-        {(selectionMode || isSelected) && (
-          <div className="absolute top-2 left-2 z-10">
-            <Checkbox 
-              checked={isSelected}
-              onCheckedChange={(checked) => onSelect(photo.id, checked === true)}
-              className="bg-white border-gray-300 data-[state=checked]:bg-portfolio-primary data-[state=checked]:border-portfolio-primary"
-            />
-          </div>
-        )}
-
-        {isHovered && !selectionMode && (
-          <button 
-            className="absolute top-2 right-2 z-10 bg-white/90 p-1 rounded-full text-red-500 hover:bg-red-50 transition-colors"
-            onClick={handleDeleteClick}
+        {/* Кнопка удаления */}
+        {showControls && !selectionMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(photo.id);
+            }}
+            className="absolute top-2 right-2 bg-black/50 rounded-full p-1 text-white hover:bg-red-500 transition-colors"
+            aria-label="Удалить фото"
           >
             <Trash2Icon className="h-4 w-4" />
           </button>
         )}
-        
-        <div className="mt-1 text-xs text-gray-600 truncate px-1">
-          {photo.name}
-        </div>
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl p-1 bg-black">
-          <div className="relative flex items-center justify-center w-full h-full">
-            <img
-              src={photo.url}
-              alt={photo.name}
-              className="max-h-[80vh] max-w-full object-contain"
-            />
-            <div className="absolute bottom-2 left-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-md text-sm">
-              <div className="flex justify-between items-center">
-                <span>{photo.name}</span>
-                <span className="text-xs text-gray-300">
-                  {isHorizontal ? '15×10' : '10×15'} | {Math.round(photo.width/photo.height * 100)/100}
-                </span>
-              </div>
+      
+      {/* Диалог с полным изображением */}
+      <Dialog open={showFullImage} onOpenChange={setShowFullImage}>
+        <DialogContent className="max-w-6xl p-2 bg-black/95 border-gray-800">
+          <div className="relative flex flex-col items-center">
+            <div className="max-h-[80vh] overflow-auto">
+              <img 
+                src={photo.url} 
+                alt={photo.name} 
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            <div className="w-full mt-2 flex justify-between items-center text-white p-2">
+              <p className="text-sm">{photo.name}</p>
+              <p className="text-xs opacity-70">Загружено: {formattedDate}</p>
             </div>
           </div>
         </DialogContent>

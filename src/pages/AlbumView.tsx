@@ -89,7 +89,7 @@ const AlbumView = () => {
   useEffect(() => {
     // Имитация загрузки данных альбома
     if (id) {
-      const albumData = mockAlbums[id];
+      const albumData = mockAlbums[id as keyof typeof mockAlbums];
       if (albumData) {
         setAlbum(albumData);
         setNewAlbumName(albumData.name);
@@ -241,7 +241,10 @@ const AlbumView = () => {
           </TabsContent>
           
           <TabsContent value="upload">
-            <PhotoUploader onUploadComplete={handlePhotoUpload} />
+            <PhotoUploader 
+              onUploadComplete={handlePhotoUpload} 
+              albumId={album.id}
+            />
           </TabsContent>
         </Tabs>
       </main>
