@@ -99,20 +99,21 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
       uploadDate: string;
     }> = [];
     
+    // Исправляем логику для корректной загрузки файлов
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i];
       
-      // Создаем временный URL
+      // Создаем временный URL для превью
       const fileUrl = URL.createObjectURL(file);
       
-      // Имитация загрузки
+      // Имитация загрузки с получением реальных размеров изображения
       await new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
           // Добавляем фото в массив загруженных
           uploadedPhotos.push({
             id: `photo-${Date.now()}-${i}`,
-            url: fileUrl,
+            url: fileUrl, // В реальном приложении здесь будет URL с сервера
             name: file.name,
             width: img.width,
             height: img.height,
@@ -126,19 +127,24 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
         img.src = fileUrl;
       });
       
-      // Имитация задержки для наглядности
+      // Имитация задержки сети
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     
-    setUploading(false);
-    setPreviews([]);
-    setFiles([]);
-    toast({
-      title: "Загрузка завершена",
-      description: `Успешно загружено ${totalFiles} фото`,
-    });
-    
-    onUploadComplete(uploadedPhotos);
+    // По завершении загрузки
+    setTimeout(() => {
+      setUploading(false);
+      setFiles([]);
+      setPreviews([]);
+      
+      toast({
+        title: "Загрузка завершена",
+        description: `Успешно загружено ${totalFiles} фото`,
+      });
+      
+      // Передаем загруженные фото в родительский компонент
+      onUploadComplete(uploadedPhotos);
+    }, 500);
   };
 
   const createNewAlbum = () => {
@@ -197,7 +203,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
 
       <div
         className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
-          isDragging ? "border-portfolio-primary bg-portfolio-accent/10" : "border-gray-300"
+          isDragging ? "border-primary bg-primary/10" : "border-gray-300"
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -268,7 +274,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
             </div>
           ) : (
             <Button
-              className="mt-4 w-full bg-portfolio-primary hover:bg-portfolio-secondary"
+              className="mt-4 w-full bg-primary hover:bg-primary/90"
               onClick={uploadFiles}
             >
               <UploadIcon className="mr-2 h-4 w-4" />
@@ -326,7 +332,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
             </Button>
             <Button 
               onClick={createNewAlbum}
-              className="bg-portfolio-primary hover:bg-portfolio-secondary"
+              className="bg-primary hover:bg-primary/90"
               disabled={!newAlbumName.trim()}
             >
               Создать

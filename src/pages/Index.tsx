@@ -3,9 +3,10 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import AlbumCard, { Album } from "@/components/AlbumCard";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { FolderPlusIcon, InfoIcon } from "lucide-react";
+import { FolderPlusIcon, InfoIcon, Trash2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 // Пример данных для альбомов
 const initialAlbums: Album[] = [
@@ -32,6 +33,8 @@ const initialAlbums: Album[] = [
 const Index = () => {
   const [albums, setAlbums] = useState<Album[]>(initialAlbums);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null);
   const [newAlbumName, setNewAlbumName] = useState("");
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
@@ -46,6 +49,30 @@ const Index = () => {
       setAlbums([...albums, newAlbum]);
       setNewAlbumName("");
       setIsCreateDialogOpen(false);
+      
+      toast({
+        title: "Альбом создан",
+        description: `Альбом "${newAlbumName.trim()}" успешно создан`,
+      });
+    }
+  };
+  
+  const openDeleteDialog = (album: Album, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAlbumToDelete(album);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const handleDeleteAlbum = () => {
+    if (albumToDelete) {
+      setAlbums(albums.filter(album => album.id !== albumToDelete.id));
+      toast({
+        title: "Альбом удален",
+        description: `Альбом "${albumToDelete.name}" был успешно удален`,
+      });
+      setIsDeleteDialogOpen(false);
+      setAlbumToDelete(null);
     }
   };
 
@@ -56,7 +83,7 @@ const Index = () => {
       <main className="container px-4 py-8 mx-auto">
         <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-portfolio-text">Мои альбомы</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Мои альбомы</h2>
             <p className="text-gray-500">Организуйте свои фотографии по альбомам</p>
           </div>
           
@@ -72,7 +99,7 @@ const Index = () => {
             
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-portfolio-primary hover:bg-portfolio-secondary gap-1"
+              className="bg-primary hover:bg-primary/90 gap-1"
             >
               <FolderPlusIcon className="w-4 h-4" />
               <span>Создать альбом</span>
@@ -83,7 +110,15 @@ const Index = () => {
         {albums.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {albums.map((album) => (
-              <AlbumCard key={album.id} album={album} />
+              <div key={album.id} className="relative group">
+                <AlbumCard album={album} />
+                <button
+                  onClick={(e) => openDeleteDialog(album, e)}
+                  className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             ))}
           </div>
         ) : (
@@ -92,7 +127,7 @@ const Index = () => {
             <p className="mb-4 text-gray-500">Создайте свой первый альбом для загрузки фотографий</p>
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-portfolio-primary hover:bg-portfolio-secondary"
+              className="bg-primary hover:bg-primary/90"
             >
               <FolderPlusIcon className="w-4 h-4 mr-2" />
               Создать альбом
@@ -121,12 +156,40 @@ const Index = () => {
             </div>
             <Button 
               onClick={handleCreateAlbum} 
-              className="w-full bg-portfolio-primary hover:bg-portfolio-secondary"
+              className="w-full bg-primary hover:bg-primary/90"
               disabled={!newAlbumName.trim()}
             >
               Создать
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог удаления альбома */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Удалить альбом</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              Вы уверены, что хотите удалить альбом "{albumToDelete?.name}"? Все фотографии в этом альбоме будут удалены.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteAlbum}
+            >
+              Удалить
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -207,7 +270,7 @@ const Index = () => {
           </div>
           <Button 
             onClick={() => setIsInfoDialogOpen(false)} 
-            className="w-full bg-portfolio-primary hover:bg-portfolio-secondary"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             Понятно
           </Button>

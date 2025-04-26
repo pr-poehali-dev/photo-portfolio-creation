@@ -171,6 +171,11 @@ const AlbumView = () => {
     
     // Автоматический переход на вкладку галереи после загрузки
     setActiveTab("gallery");
+    
+    toast({
+      title: "Фотографии загружены",
+      description: `Добавлено ${newPhotos.length} фото в альбом "${album?.name}"`,
+    });
   };
 
   const handleDeletePhotos = (photoIds: string[]) => {
@@ -182,6 +187,11 @@ const AlbumView = () => {
         count: album.count - photoIds.length
       });
     }
+    
+    toast({
+      title: "Фотографии удалены",
+      description: `Удалено ${photoIds.length} фотографий`,
+    });
   };
   
   const handleDeleteSinglePhoto = (photoId: string) => {
@@ -247,7 +257,7 @@ const AlbumView = () => {
               </a>
             </Button>
             
-            <h2 className="text-2xl font-bold text-portfolio-text">{album.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{album.name}</h2>
             <span className="text-sm font-medium text-gray-500">
               {album.count} {album.count === 1 ? 'фото' : 
                 album.count >= 2 && album.count <= 4 ? 'фото' : 'фотографий'}
@@ -327,7 +337,7 @@ const AlbumView = () => {
             </Button>
             <Button 
               onClick={handleRenameAlbum}
-              className="bg-portfolio-primary hover:bg-portfolio-secondary"
+              className="bg-primary hover:bg-primary/90"
               disabled={!newAlbumName.trim() || newAlbumName.trim() === album.name}
             >
               Сохранить

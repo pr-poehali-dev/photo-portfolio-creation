@@ -1,78 +1,24 @@
 
 import { useState } from "react";
-import { Photo } from "./PhotoItem";
-import PhotoItem from "./PhotoItem";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon, SaveIcon, XIcon, CheckIcon, GridIcon, Grid3X3Icon } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Photo, PhotoItem } from "./PhotoItem";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle2, Trash2, X } from "lucide-react";
 
 interface PhotoGalleryProps {
   photos: Photo[];
-  onDeletePhotos: (ids: string[]) => void;
-  onDeleteSinglePhoto: (id: string) => void;
+  onDeletePhotos: (photoIds: string[]) => void;
+  onDeleteSinglePhoto: (photoId: string) => void;
 }
 
 const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [gridGap, setGridGap] = useState<string>("gap-0.5");
-  const [gridCols, setGridCols] = useState<string>("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-
-  const handleSelectPhoto = (id: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedPhotos(prev => [...prev, id]);
-    } else {
-      setSelectedPhotos(prev => prev.filter(photoId => photoId !== id));
-    }
-  };
-
-  const handleDeleteSelected = () => {
-    if (selectedPhotos.length > 0) {
-      onDeletePhotos(selectedPhotos);
-      toast({
-        title: "Удаление успешно",
-        description: `Удалено ${selectedPhotos.length} фотографий`,
-      });
-      setSelectedPhotos([]);
-      setIsSelectionMode(false);
-    }
-  };
-  
-  const handleSaveSelected = () => {
-    if (selectedPhotos.length > 0) {
-      toast({
-        title: "Сохранение",
-        description: `Выбрано ${selectedPhotos.length} фотографий для сохранения`,
-      });
-      // Здесь будет логика сохранения
-      setSelectedPhotos([]);
-      setIsSelectionMode(false);
-    }
-  };
-  
-  const clearSelection = () => {
-    setSelectedPhotos([]);
-    setIsSelectionMode(false);
-  };
-  
-  const toggleGridGap = () => {
-    // Циклически меняем размер отступов: нет -> маленький -> средний
-    if (gridGap === "gap-0.5") {
-      setGridGap("gap-0");
-    } else if (gridGap === "gap-0") {
-      setGridGap("gap-1");
-    } else {
-      setGridGap("gap-0.5");
-    }
-  };
-  
-  const toggleGridSize = () => {
-    if (gridCols.includes("grid-cols-5")) {
-      setGridCols("grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4"); // Уменьшаем
-    } else {
-      setGridCols("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"); // Увеличиваем
-    }
-  };
+  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [gapSize, setGapSize] = useState("0"); // 0, 1, 2 - значения отступов
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -81,7 +27,15 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
     }
   };
 
-  const selectAllPhotos = () => {
+  const togglePhotoSelection = (photoId: string) => {
+    if (selectedPhotos.includes(photoId)) {
+      setSelectedPhotos(selectedPhotos.filter(id => id !== photoId));
+    } else {
+      setSelectedPhotos([...selectedPhotos, photoId]);
+    }
+  };
+
+  const handleSelectAll = () => {
     if (selectedPhotos.length === photos.length) {
       setSelectedPhotos([]);
     } else {
@@ -89,106 +43,140 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
     }
   };
 
+  const deleteSelectedPhotos = () => {
+    if (selectedPhotos.length > 0) {
+      onDeletePhotos(selectedPhotos);
+      setSelectedPhotos([]);
+      setIsSelectionMode(false);
+    }
+  };
+
+  const handleViewPhoto = (photo: Photo) => {
+    setCurrentPhoto(photo);
+    setIsViewerOpen(true);
+  };
+
+  const getGapClass = () => {
+    switch (gapSize) {
+      case "0": return "gap-0";
+      case "1": return "gap-1";
+      case "2": return "gap-2";
+      default: return "gap-1";
+    }
+  };
+
   return (
-    <div className="w-full">
-      {photos.length > 0 ? (
-        <>
-          {/* Панель действий */}
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={toggleGridGap}
-              >
-                {gridGap === "gap-0" ? "Без отступов" : 
-                 gridGap === "gap-0.5" ? "Маленькие отступы" : "Средние отступы"}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={toggleGridSize}
-              >
-                <Grid3X3Icon className="h-4 w-4 mr-1" />
-                {gridCols.includes("grid-cols-5") ? "Крупнее" : "Мельче"}
-              </Button>
-              
+    <div>
+      <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+        <div className="flex gap-2 items-center">
+          <Button
+            variant={isSelectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={toggleSelectionMode}
+            className={isSelectionMode ? "bg-primary" : ""}
+          >
+            {isSelectionMode ? "Отменить выбор" : "Выбрать фото"}
+          </Button>
+          
+          {isSelectionMode && (
+            <>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={toggleSelectionMode}
-                className={isSelectionMode ? "bg-portfolio-accent/20" : ""}
+                onClick={handleSelectAll}
               >
-                {isSelectionMode ? "Отменить выбор" : "Выбрать несколько"}
+                {selectedPhotos.length === photos.length ? "Снять выбор" : "Выбрать все"}
               </Button>
               
-              {isSelectionMode && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAllPhotos}
-                >
-                  {selectedPhotos.length === photos.length ? "Снять выделение" : "Выбрать все"}
-                </Button>
-              )}
-            </div>
-            
-            {selectedPhotos.length > 0 && (
-              <div className="flex items-center space-x-2 bg-portfolio-accent/20 px-3 py-1.5 rounded-md animate-fade-in">
-                <span className="text-sm font-medium">Выбрано: {selectedPhotos.length}</span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8 text-red-500 hover:bg-red-50"
-                  onClick={handleDeleteSelected}
-                >
-                  <Trash2Icon className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8 text-green-600 hover:bg-green-50"
-                  onClick={handleSaveSelected}
-                >
-                  <SaveIcon className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8"
-                  onClick={clearSelection}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Галерея фотографий в виде коллажа */}
-          <div className={`grid ${gridCols} ${gridGap}`}>
-            {photos.map(photo => (
-              <PhotoItem
-                key={photo.id}
-                photo={photo}
-                isSelected={selectedPhotos.includes(photo.id)}
-                onSelect={handleSelectPhoto}
-                onDelete={onDeleteSinglePhoto}
-                selectionMode={isSelectionMode}
-              />
-            ))}
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-lg">
-          <div className="mb-4 text-portfolio-primary opacity-60">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="mb-1 text-xl font-medium">Нет фотографий</h3>
-          <p className="text-gray-500">Загрузите фотографии, чтобы увидеть их здесь</p>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={deleteSelectedPhotos}
+                disabled={selectedPhotos.length === 0}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Удалить {selectedPhotos.length > 0 ? `(${selectedPhotos.length})` : ''}
+              </Button>
+            </>
+          )}
         </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Отступы:</span>
+          <Select value={gapSize} onValueChange={setGapSize}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Размер отступов" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Без отступов</SelectItem>
+              <SelectItem value="1">Маленькие</SelectItem>
+              <SelectItem value="2">Средние</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {photos.length > 0 ? (
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 ${getGapClass()}`}>
+          {photos.map(photo => (
+            <PhotoItem
+              key={photo.id}
+              photo={photo}
+              isSelected={selectedPhotos.includes(photo.id)}
+              isSelectionMode={isSelectionMode}
+              onSelect={() => togglePhotoSelection(photo.id)}
+              onView={() => handleViewPhoto(photo)}
+              onDelete={() => onDeleteSinglePhoto(photo.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border-2 border-dashed rounded-md">
+          <p className="text-gray-500">В этом альбоме пока нет фотографий</p>
+          <p className="text-sm mt-1 text-gray-400">Перейдите на вкладку "Загрузить" чтобы добавить фото</p>
+        </div>
+      )}
+      
+      {isSelectionMode && selectedPhotos.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 py-2 px-4 bg-primary text-white rounded-full shadow-lg z-50">
+          <Badge variant="secondary" className="mr-2">
+            {selectedPhotos.length}
+          </Badge>
+          фото выбрано
+        </div>
+      )}
+      
+      {currentPhoto && (
+        <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+          <DialogContent className="max-w-5xl h-auto p-0 bg-black rounded-lg">
+            <div className="relative h-full">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 z-10 bg-black/50 text-white hover:bg-black/70"
+                onClick={() => setIsViewerOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              
+              <div className="relative w-full h-full flex items-center justify-center p-2">
+                <img 
+                  src={currentPhoto.url} 
+                  alt={currentPhoto.name} 
+                  className="max-h-[80vh] max-w-full object-contain mx-auto"
+                />
+              </div>
+              
+              <div className="p-4 bg-black/95 text-white">
+                <h3 className="text-lg font-medium">{currentPhoto.name}</h3>
+                <p className="text-sm text-gray-400">
+                  {new Date(currentPhoto.uploadDate).toLocaleDateString()} • 
+                  {currentPhoto.width}×{currentPhoto.height}
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
