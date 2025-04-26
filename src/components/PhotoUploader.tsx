@@ -16,6 +16,7 @@ interface PhotoUploaderProps {
 const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedAlbum, setSelectedAlbum] = useState(albumId);
@@ -32,6 +33,17 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
     setIsDragging(false);
   };
 
+  const generatePreviews = (selectedFiles: File[]) => {
+    // Очищаем старые превью при добавлении новых файлов
+    const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+    setPreviews(prev => [...prev, ...newPreviews]);
+    
+    return () => {
+      // Очистка URL объектов при размонтировании
+      newPreviews.forEach(URL.revokeObjectURL);
+    };
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
@@ -42,6 +54,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
     
     if (droppedFiles.length > 0) {
       setFiles(prev => [...prev, ...droppedFiles]);
+      generatePreviews(droppedFiles);
     }
   };
 
@@ -51,6 +64,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
         file => file.type.startsWith('image/')
       );
       setFiles(prev => [...prev, ...selectedFiles]);
+      generatePreviews(selectedFiles);
       
       // Сбрасываем значение input, чтобы можно было загрузить те же файлы повторно
       if (fileInputRef.current) {
@@ -60,7 +74,12 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
   };
 
   const removeFile = (index: number) => {
+    // Удаляем файл и его превью
     setFiles(files.filter((_, i) => i !== index));
+    
+    // Освобождаем URL объект для превью
+    URL.revokeObjectURL(previews[index]);
+    setPreviews(previews.filter((_, i) => i !== index));
   };
 
   const uploadFiles = async () => {
@@ -112,6 +131,7 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
     }
     
     setUploading(false);
+    setPreviews([]);
     setFiles([]);
     toast({
       title: "Загрузка завершена",
@@ -211,27 +231,29 @@ const PhotoUploader = ({ onUploadComplete, albumId }: PhotoUploaderProps) => {
         </div>
       </div>
 
-      {files.length > 0 && (
+      {previews.length > 0 && (
         <div className="mt-4">
           <div className="text-sm font-medium mb-2">
             Выбрано файлов: {files.length}
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border rounded-md">
-            {files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2">
-                <div className="flex items-center overflow-hidden">
-                  <div className="w-8 h-8 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center mr-2">
-                    <ImageIcon className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <span className="text-sm truncate">{file.name}</span>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-2 border rounded-md">
+            {previews.map((preview, index) => (
+              <div key={index} className="relative group">
+                <img 
+                  src={preview} 
+                  alt={`Превью ${index + 1}`} 
+                  className="w-full h-24 object-cover rounded"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-white text-xs truncate">
+                  {files[index]?.name}
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
-                  className="flex-shrink-0 ml-2 text-gray-500 hover:text-red-500"
+                  className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <XIcon className="h-4 w-4" />
+                  <XIcon className="h-3 w-3" />
                 </button>
               </div>
             ))}

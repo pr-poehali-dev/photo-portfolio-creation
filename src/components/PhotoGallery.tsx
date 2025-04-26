@@ -14,7 +14,7 @@ interface PhotoGalleryProps {
 
 const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [gridGap, setGridGap] = useState<string>("gap-1");
+  const [gridGap, setGridGap] = useState<string>("gap-0.5");
   const [gridCols, setGridCols] = useState<string>("grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
@@ -56,7 +56,14 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
   };
   
   const toggleGridGap = () => {
-    setGridGap(gridGap === "gap-1" ? "gap-0.5" : "gap-1");
+    // Циклически меняем размер отступов: нет -> маленький -> средний
+    if (gridGap === "gap-0.5") {
+      setGridGap("gap-0");
+    } else if (gridGap === "gap-0") {
+      setGridGap("gap-1");
+    } else {
+      setGridGap("gap-0.5");
+    }
   };
   
   const toggleGridSize = () => {
@@ -94,7 +101,8 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
                 size="sm"
                 onClick={toggleGridGap}
               >
-                {gridGap === "gap-1" ? "Меньше отступы" : "Больше отступы"}
+                {gridGap === "gap-0" ? "Без отступов" : 
+                 gridGap === "gap-0.5" ? "Маленькие отступы" : "Средние отступы"}
               </Button>
               
               <Button 
@@ -157,7 +165,7 @@ const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGall
             )}
           </div>
 
-          {/* Галерея фотографий */}
+          {/* Галерея фотографий в виде коллажа */}
           <div className={`grid ${gridCols} ${gridGap}`}>
             {photos.map(photo => (
               <PhotoItem

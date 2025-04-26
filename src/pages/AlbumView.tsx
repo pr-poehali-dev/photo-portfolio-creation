@@ -43,6 +43,22 @@ const mockPhotos: Record<string, Photo[]> = {
       width: 1500,
       height: 1000,
       uploadDate: "2025-04-15T09:45:00Z"
+    },
+    {
+      id: "photo-7",
+      url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop",
+      name: "Звездное небо.jpg",
+      width: 1500,
+      height: 1000,
+      uploadDate: "2025-04-16T12:30:00Z"
+    },
+    {
+      id: "photo-8",
+      url: "https://images.unsplash.com/photo-1542224566-6e85f2e6772f?w=800&auto=format&fit=crop",
+      name: "Горная дорога.jpg",
+      width: 1000,
+      height: 1500,
+      uploadDate: "2025-04-17T08:15:00Z"
     }
   ],
   "album-2": [
@@ -53,6 +69,22 @@ const mockPhotos: Record<string, Photo[]> = {
       width: 1000,
       height: 1500,
       uploadDate: "2025-04-18T16:30:00Z"
+    },
+    {
+      id: "photo-9",
+      url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&auto=format&fit=crop",
+      name: "Портрет 2.jpg",
+      width: 1000,
+      height: 1500,
+      uploadDate: "2025-04-19T14:20:00Z"
+    },
+    {
+      id: "photo-10",
+      url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop",
+      name: "Портрет 3.jpg",
+      width: 1200,
+      height: 1800,
+      uploadDate: "2025-04-20T10:30:00Z"
     }
   ],
   "album-3": [
@@ -71,6 +103,30 @@ const mockPhotos: Record<string, Photo[]> = {
       width: 1000,
       height: 1500,
       uploadDate: "2025-04-22T13:40:00Z"
+    },
+    {
+      id: "photo-11",
+      url: "https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=800&auto=format&fit=crop",
+      name: "Городская площадь.jpg",
+      width: 1500,
+      height: 1000,
+      uploadDate: "2025-04-23T09:45:00Z"
+    },
+    {
+      id: "photo-12",
+      url: "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=800&auto=format&fit=crop",
+      name: "Венеция.jpg",
+      width: 1000,
+      height: 1500,
+      uploadDate: "2025-04-24T16:20:00Z"
+    },
+    {
+      id: "photo-13",
+      url: "https://images.unsplash.com/photo-1504512485720-7d83a16ee930?w=800&auto=format&fit=crop",
+      name: "Закат в Сантьяго.jpg",
+      width: 1500,
+      height: 1000,
+      uploadDate: "2025-04-25T18:30:00Z"
     }
   ]
 };

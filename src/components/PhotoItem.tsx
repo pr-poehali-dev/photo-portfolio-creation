@@ -42,22 +42,27 @@ const PhotoItem = ({ photo, onDelete, onSelect, isSelected, selectionMode }: Pho
     year: 'numeric'
   });
 
+  // Определяем ориентацию фото
+  const isLandscape = photo.width >= photo.height;
+
   return (
     <>
       <div 
-        className="group relative aspect-square overflow-hidden bg-gray-100"
+        className="group relative overflow-hidden bg-gray-100"
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >
         {/* Содержимое фото */}
         <div 
-          className="w-full h-full cursor-pointer relative"
+          className="w-full aspect-square cursor-pointer relative"
           onClick={handleImageClick}
         >
           <img 
             src={photo.url} 
             alt={photo.name}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className={`w-full h-full object-cover transition-transform group-hover:scale-105 ${
+              isLandscape ? 'object-cover' : 'object-cover'
+            }`}
           />
           
           {/* Overlay при наведении */}
@@ -66,13 +71,7 @@ const PhotoItem = ({ photo, onDelete, onSelect, isSelected, selectionMode }: Pho
             ${selectionMode ? 'opacity-100 bg-black/10' : ''} 
             ${isSelected ? 'opacity-100 bg-portfolio-primary/30' : ''} 
             transition-opacity`}
-          >
-            {!selectionMode && (
-              <span className="text-white text-sm font-medium px-2 py-1 bg-black/50 rounded max-w-full truncate">
-                {photo.name}
-              </span>
-            )}
-          </div>
+          />
           
           {/* Чекбокс для выбора в режиме выбора */}
           {selectionMode && (
@@ -85,11 +84,11 @@ const PhotoItem = ({ photo, onDelete, onSelect, isSelected, selectionMode }: Pho
               />
             </div>
           )}
-          
-          {/* Название фото снизу */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-            <p className="text-white text-xs truncate">{photo.name}</p>
-          </div>
+        </div>
+        
+        {/* Название фото снизу (всегда видимое) */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+          <p className="text-white text-xs truncate">{photo.name}</p>
         </div>
         
         {/* Кнопка удаления */}
@@ -115,7 +114,7 @@ const PhotoItem = ({ photo, onDelete, onSelect, isSelected, selectionMode }: Pho
               <img 
                 src={photo.url} 
                 alt={photo.name} 
-                className="max-w-full max-h-full object-contain"
+                className="max-w-full h-auto object-contain"
               />
             </div>
             <div className="w-full mt-2 flex justify-between items-center text-white p-2">
