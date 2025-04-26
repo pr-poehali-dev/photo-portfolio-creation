@@ -1,0 +1,198 @@
+
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { UploadIcon, XIcon, ImageIcon } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+
+interface PhotoUploaderProps {
+  onUploadComplete: (photos: Array<{ id: string, url: string, name: string, width: number, height: number, uploadDate: string }>) => void;
+}
+
+const PhotoUploader = ({ onUploadComplete }: PhotoUploaderProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(
+      file => file.type.startsWith('image/')
+    );
+    
+    if (droppedFiles.length > 0) {
+      setFiles(prev => [...prev, ...droppedFiles]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files).filter(
+        file => file.type.startsWith('image/')
+      );
+      setFiles(prev => [...prev, ...selectedFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async () => {
+    if (files.length === 0) return;
+    
+    setUploading(true);
+    setProgress(0);
+    
+    // Имитация загрузки с прогрессом
+    const totalFiles = files.length;
+    const uploadedPhotos: Array<{
+      id: string;
+      url: string;
+      name: string;
+      width: number;
+      height: number;
+      uploadDate: string;
+    }> = [];
+    
+    for (let i = 0; i < totalFiles; i++) {
+      const file = files[i];
+      
+      // Создаем временный URL
+      const fileUrl = URL.createObjectURL(file);
+      
+      // Имитация загрузки
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          // Добавляем фото в массив загруженных
+          uploadedPhotos.push({
+            id: `photo-${Date.now()}-${i}`,
+            url: fileUrl,
+            name: file.name,
+            width: img.width,
+            height: img.height,
+            uploadDate: new Date().toISOString()
+          });
+          
+          // Обновляем прогресс
+          setProgress(Math.round(((i + 1) / totalFiles) * 100));
+          resolve();
+        };
+        img.src = fileUrl;
+      });
+      
+      // Имитация задержки для наглядности
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    setUploading(false);
+    setFiles([]);
+    toast({
+      title: "Загрузка завершена",
+      description: `Успешно загружено ${totalFiles} фото`,
+    });
+    
+    onUploadComplete(uploadedPhotos);
+  };
+
+  return (
+    <div className="w-full max-w-3xl mx-auto">
+      <div
+        className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+          isDragging ? "border-portfolio-primary bg-portfolio-accent/10" : "border-gray-300"
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <ImageIcon className="h-12 w-12 text-gray-400" />
+          <div className="text-center">
+            <p className="text-base font-medium">
+              Перетащите файлы сюда или
+            </p>
+            <p className="text-sm text-gray-500">
+              Поддерживаются JPG, PNG
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-2"
+          >
+            Выбрать файлы
+          </Button>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+          />
+        </div>
+      </div>
+
+      {files.length > 0 && (
+        <div className="mt-4">
+          <div className="text-sm font-medium mb-2">
+            Выбрано файлов: {files.length}
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border rounded-md">
+            {files.map((file, index) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                <div className="flex items-center overflow-hidden">
+                  <div className="w-8 h-8 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center mr-2">
+                    <ImageIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <span className="text-sm truncate">{file.name}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="flex-shrink-0 ml-2 text-gray-500 hover:text-red-500"
+                >
+                  <XIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          {uploading ? (
+            <div className="mt-4 space-y-2">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-center text-gray-500">
+                Загружено {progress}%
+              </p>
+            </div>
+          ) : (
+            <Button
+              className="mt-4 w-full bg-portfolio-primary hover:bg-portfolio-secondary"
+              onClick={uploadFiles}
+            >
+              <UploadIcon className="mr-2 h-4 w-4" />
+              Загрузить {files.length} файлов
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PhotoUploader;
