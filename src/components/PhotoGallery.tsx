@@ -3,17 +3,19 @@ import { useState } from "react";
 import { Photo } from "./PhotoItem";
 import PhotoItem from "./PhotoItem";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon, SaveIcon, XIcon } from "lucide-react";
+import { Trash2Icon, SaveIcon, XIcon, CheckIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 interface PhotoGalleryProps {
   photos: Photo[];
   onDeletePhotos: (ids: string[]) => void;
+  onDeleteSinglePhoto: (id: string) => void;
 }
 
-const PhotoGallery = ({ photos, onDeletePhotos }: PhotoGalleryProps) => {
+const PhotoGallery = ({ photos, onDeletePhotos, onDeleteSinglePhoto }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [gridGap, setGridGap] = useState<string>("gap-2");
+  const [gridGap, setGridGap] = useState<string>("gap-1");
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const handleSelectPhoto = (id: string, isSelected: boolean) => {
     if (isSelected) {
@@ -31,6 +33,7 @@ const PhotoGallery = ({ photos, onDeletePhotos }: PhotoGalleryProps) => {
         description: `Удалено ${selectedPhotos.length} фотографий`,
       });
       setSelectedPhotos([]);
+      setIsSelectionMode(false);
     }
   };
   
@@ -41,15 +44,33 @@ const PhotoGallery = ({ photos, onDeletePhotos }: PhotoGalleryProps) => {
         description: `Выбрано ${selectedPhotos.length} фотографий для сохранения`,
       });
       // Здесь будет логика сохранения
+      setSelectedPhotos([]);
+      setIsSelectionMode(false);
     }
   };
   
   const clearSelection = () => {
     setSelectedPhotos([]);
+    setIsSelectionMode(false);
   };
   
   const toggleGridGap = () => {
-    setGridGap(gridGap === "gap-2" ? "gap-1" : "gap-2");
+    setGridGap(gridGap === "gap-1" ? "gap-0.5" : "gap-1");
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      setSelectedPhotos([]);
+    }
+  };
+
+  const selectAllPhotos = () => {
+    if (selectedPhotos.length === photos.length) {
+      setSelectedPhotos([]);
+    } else {
+      setSelectedPhotos(photos.map(photo => photo.id));
+    }
   };
 
   return (
@@ -64,8 +85,27 @@ const PhotoGallery = ({ photos, onDeletePhotos }: PhotoGalleryProps) => {
                 size="sm"
                 onClick={toggleGridGap}
               >
-                {gridGap === "gap-2" ? "Уменьшить отступы" : "Увеличить отступы"}
+                {gridGap === "gap-1" ? "Меньше отступы" : "Больше отступы"}
               </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleSelectionMode}
+                className={isSelectionMode ? "bg-portfolio-accent/20" : ""}
+              >
+                {isSelectionMode ? "Отменить выбор" : "Выбрать несколько"}
+              </Button>
+              
+              {isSelectionMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllPhotos}
+                >
+                  {selectedPhotos.length === photos.length ? "Снять выделение" : "Выбрать все"}
+                </Button>
+              )}
             </div>
             
             {selectedPhotos.length > 0 && (
@@ -107,6 +147,8 @@ const PhotoGallery = ({ photos, onDeletePhotos }: PhotoGalleryProps) => {
                 photo={photo}
                 isSelected={selectedPhotos.includes(photo.id)}
                 onSelect={handleSelectPhoto}
+                onDelete={onDeleteSinglePhoto}
+                selectionMode={isSelectionMode}
               />
             ))}
           </div>

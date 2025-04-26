@@ -44,6 +44,11 @@ const PhotoUploader = ({ onUploadComplete }: PhotoUploaderProps) => {
         file => file.type.startsWith('image/')
       );
       setFiles(prev => [...prev, ...selectedFiles]);
+      
+      // Сбрасываем значение input, чтобы можно было загрузить те же файлы повторно
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -126,7 +131,7 @@ const PhotoUploader = ({ onUploadComplete }: PhotoUploaderProps) => {
               Перетащите файлы сюда или
             </p>
             <p className="text-sm text-gray-500">
-              Поддерживаются JPG, PNG
+              Поддерживаются JPG, PNG, GIF
             </p>
           </div>
           <Button
@@ -191,6 +196,32 @@ const PhotoUploader = ({ onUploadComplete }: PhotoUploaderProps) => {
           )}
         </div>
       )}
+      
+      <div className="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h3 className="font-medium text-lg mb-2">Информация о хранилище</h3>
+        <ul className="space-y-2 text-sm">
+          <li className="flex justify-between">
+            <span>Базовый тариф</span>
+            <span className="font-medium">5 ГБ бесплатно</span>
+          </li>
+          <li className="flex justify-between">
+            <span>Тариф "Фотограф"</span>
+            <span className="font-medium">20 ГБ - 299 ₽/мес</span>
+          </li>
+          <li className="flex justify-between">
+            <span>Тариф "Профессионал"</span>
+            <span className="font-medium">100 ГБ - 699 ₽/мес</span>
+          </li>
+          <li className="flex justify-between">
+            <span>Тариф "Студия"</span>
+            <span className="font-medium">1 ТБ - 1999 ₽/мес</span>
+          </li>
+        </ul>
+        <div className="mt-4">
+          <Progress value={35} className="h-2" />
+          <p className="text-xs mt-1 text-gray-500">Использовано 1.75 ГБ из 5 ГБ (35%)</p>
+        </div>
+      </div>
     </div>
   );
 };

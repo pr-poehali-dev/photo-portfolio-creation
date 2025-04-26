@@ -84,6 +84,7 @@ const AlbumView = () => {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newAlbumName, setNewAlbumName] = useState("");
+  const [activeTab, setActiveTab] = useState("gallery");
   
   useEffect(() => {
     // Имитация загрузки данных альбома
@@ -111,6 +112,9 @@ const AlbumView = () => {
         count: album.count + newPhotos.length
       });
     }
+    
+    // Автоматический переход на вкладку галереи после загрузки
+    setActiveTab("gallery");
   };
 
   const handleDeletePhotos = (photoIds: string[]) => {
@@ -122,6 +126,22 @@ const AlbumView = () => {
         count: album.count - photoIds.length
       });
     }
+  };
+  
+  const handleDeleteSinglePhoto = (photoId: string) => {
+    setPhotos(prev => prev.filter(photo => photo.id !== photoId));
+    
+    if (album) {
+      setAlbum({
+        ...album,
+        count: album.count - 1
+      });
+    }
+    
+    toast({
+      title: "Фото удалено",
+      description: "Фотография была успешно удалена",
+    });
   };
 
   const handleRenameAlbum = () => {
@@ -200,7 +220,7 @@ const AlbumView = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="gallery" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="gallery" className="gap-2">
               <GridIcon className="h-4 w-4" />
@@ -213,7 +233,11 @@ const AlbumView = () => {
           </TabsList>
           
           <TabsContent value="gallery">
-            <PhotoGallery photos={photos} onDeletePhotos={handleDeletePhotos} />
+            <PhotoGallery 
+              photos={photos} 
+              onDeletePhotos={handleDeletePhotos}
+              onDeleteSinglePhoto={handleDeleteSinglePhoto}
+            />
           </TabsContent>
           
           <TabsContent value="upload">
