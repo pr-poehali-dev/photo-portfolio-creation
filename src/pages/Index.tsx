@@ -5,7 +5,7 @@ import AlbumCard, { Album } from "@/components/AlbumCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { FolderPlusIcon, InfoIcon, Trash2 } from "lucide-react";
+import { FolderPlusIcon, Trash2, PencilIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 // Пример данных для альбомов
@@ -31,12 +31,24 @@ const initialAlbums: Album[] = [
 ];
 
 const Index = () => {
-  const [albums, setAlbums] = useState<Album[]>(initialAlbums);
+  const [albums, setAlbums] = useState<Album[]>(() => {
+    const savedAlbums = localStorage.getItem('photoAlbums');
+    return savedAlbums ? JSON.parse(savedAlbums) : initialAlbums;
+  });
+  
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null);
+  const [albumToEdit, setAlbumToEdit] = useState<Album | null>(null);
   const [newAlbumName, setNewAlbumName] = useState("");
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+
+  // Сохранение альбомов в localStorage
+  const saveAlbums = (updatedAlbums: Album[]) => {
+    localStorage.setItem('photoAlbums', JSON.stringify(updatedAlbums));
+    setAlbums(updatedAlbums);
+  };
 
   const handleCreateAlbum = () => {
     if (newAlbumName.trim()) {
@@ -46,7 +58,9 @@ const Index = () => {
         count: 0
       };
       
-      setAlbums([...albums, newAlbum]);
+      const updatedAlbums = [...albums, newAlbum];
+      saveAlbums(updatedAlbums);
+      
       setNewAlbumName("");
       setIsCreateDialogOpen(false);
       
@@ -64,9 +78,19 @@ const Index = () => {
     setIsDeleteDialogOpen(true);
   };
   
+  const openEditDialog = (album: Album, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAlbumToEdit(album);
+    setNewAlbumName(album.name);
+    setIsEditDialogOpen(true);
+  };
+  
   const handleDeleteAlbum = () => {
     if (albumToDelete) {
-      setAlbums(albums.filter(album => album.id !== albumToDelete.id));
+      const updatedAlbums = albums.filter(album => album.id !== albumToDelete.id);
+      saveAlbums(updatedAlbums);
+      
       toast({
         title: "Альбом удален",
         description: `Альбом "${albumToDelete.name}" был успешно удален`,
@@ -74,6 +98,38 @@ const Index = () => {
       setIsDeleteDialogOpen(false);
       setAlbumToDelete(null);
     }
+  };
+  
+  const handleEditAlbum = () => {
+    if (albumToEdit && newAlbumName.trim()) {
+      const updatedAlbums = albums.map(album => 
+        album.id === albumToEdit.id 
+          ? { ...album, name: newAlbumName.trim() } 
+          : album
+      );
+      
+      saveAlbums(updatedAlbums);
+      
+      toast({
+        title: "Альбом переименован",
+        description: `Новое название: "${newAlbumName.trim()}"`,
+      });
+      
+      setIsEditDialogOpen(false);
+      setAlbumToEdit(null);
+      setNewAlbumName("");
+    }
+  };
+  
+  const handleDeleteAllAlbums = () => {
+    saveAlbums([]);
+    
+    toast({
+      title: "Все альбомы удалены",
+      description: "Все альбомы были успешно удалены",
+    });
+    
+    setIsDeleteAllDialogOpen(false);
   };
 
   return (
@@ -89,12 +145,13 @@ const Index = () => {
           
           <div className="flex space-x-3">
             <Button 
-              onClick={() => setIsInfoDialogOpen(true)}
+              onClick={() => setIsDeleteAllDialogOpen(true)}
               variant="outline"
-              className="gap-1"
+              className="gap-1 text-red-500 hover:text-red-600 hover:bg-red-50"
+              disabled={albums.length === 0}
             >
-              <InfoIcon className="w-4 h-4" />
-              <span>Тарифы</span>
+              <Trash2 className="w-4 h-4" />
+              <span>Удалить все альбомы</span>
             </Button>
             
             <Button 
@@ -112,12 +169,20 @@ const Index = () => {
             {albums.map((album) => (
               <div key={album.id} className="relative group">
                 <AlbumCard album={album} />
-                <button
-                  onClick={(e) => openDeleteDialog(album, e)}
-                  className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button
+                    onClick={(e) => openEditDialog(album, e)}
+                    className="bg-black/60 text-white p-1.5 rounded-full hover:bg-blue-600"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => openDeleteDialog(album, e)}
+                    className="bg-black/60 text-white p-1.5 rounded-full hover:bg-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -165,6 +230,35 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Диалог редактирования альбома */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать альбом</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="edit-album-name" className="text-sm font-medium">
+                Название альбома
+              </label>
+              <Input
+                id="edit-album-name"
+                value={newAlbumName}
+                onChange={(e) => setNewAlbumName(e.target.value)}
+                placeholder="Введите новое название альбома"
+              />
+            </div>
+            <Button 
+              onClick={handleEditAlbum} 
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={!newAlbumName.trim() || (albumToEdit && newAlbumName.trim() === albumToEdit.name)}
+            >
+              Сохранить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       {/* Диалог удаления альбома */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
@@ -193,87 +287,32 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Диалог с информацией о тарифах */}
-      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="max-w-lg">
+      {/* Диалог удаления всех альбомов */}
+      <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Тарифы и хранилище</DialogTitle>
+            <DialogTitle>Удалить все альбомы</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <h3 className="font-medium">Бесплатный тариф</h3>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>5 ГБ бесплатного хранилища</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>До 3 альбомов</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Базовые форматы фотографий (JPG, PNG)</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-medium">Премиум тариф — 299 ₽/месяц</h3>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>50 ГБ хранилища</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Неограниченное количество альбомов</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Поддержка RAW форматов</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Расширенные инструменты организации</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-medium">Профессиональный тариф — 899 ₽/месяц</h3>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>200 ГБ хранилища</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Все функции премиум-тарифа</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Приоритетная поддержка</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span>Публичные галереи для клиентов</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="pt-2 border-t">
-              <p className="text-sm text-gray-500">
-                Для увеличения хранилища выберите подходящий тариф в личном кабинете.
-              </p>
-            </div>
+          <div className="py-4">
+            <p className="text-gray-700">
+              Вы уверены, что хотите удалить все альбомы? Это действие невозможно отменить.
+              Все фотографии во всех альбомах будут удалены.
+            </p>
           </div>
-          <Button 
-            onClick={() => setIsInfoDialogOpen(false)} 
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Понятно
-          </Button>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteAllDialogOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteAllAlbums}
+            >
+              Удалить все
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

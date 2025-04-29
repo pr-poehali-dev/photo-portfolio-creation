@@ -42,22 +42,22 @@ export const PhotoItem = ({
 
   return (
     <div 
-      className={`relative aspect-square cursor-pointer group ${
+      className={`relative cursor-pointer group ${
         isSelected ? "ring-2 ring-primary ring-offset-2" : ""
       }`}
       onClick={handleClick}
     >
-      {/* Фото с полным заполнением пространства */}
-      <div className="w-full h-full overflow-hidden">
+      {/* Фото с соотношением сторон 2:3 */}
+      <div className="relative pb-[150%] overflow-hidden">
         <img 
           src={photo.url} 
           alt={photo.name} 
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
       
       {/* Название фото снизу */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-4 pb-1 px-2">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-8 pb-2 px-2">
         <div className="text-white text-xs font-medium truncate">
           {photo.name}
         </div>

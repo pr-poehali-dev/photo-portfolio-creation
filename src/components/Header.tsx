@@ -27,9 +27,6 @@ const Header = ({ title = "Фотогалерея", showBackButton = false }: He
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            О сервисе
-          </Button>
           <Button 
             className="bg-portfolio-primary hover:bg-portfolio-secondary text-white" 
             size="sm"
